@@ -30,7 +30,7 @@ $ ./live_logs.sh
 Создание девайса hiddenfile, где [MAJOR] - полученное в логах зачение major
 
 ```bash
-$ sudo mknod hiddenfile c [MAJOR] 0
+$ sudo mknod /dev/hiddenfile c [MAJOR] 0
 ```
 
 ### Usage:
