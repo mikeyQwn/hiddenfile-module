@@ -11,5 +11,5 @@ clean:
 load: build
 	sudo insmod hiddenfile.ko
 
-unload: build
-	sudo insmod hiddenfile
+unload:
+	sudo rmmod hiddenfile
