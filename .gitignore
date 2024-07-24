@@ -1,0 +1,7 @@
+hiddenfile.ko
+hiddenfile.mod
+hiddenfile.mod.c
+hiddenfile.mod.o
+hiddenfile.o
+Module.symvers
+modules.order
