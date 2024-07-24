@@ -11,7 +11,7 @@ MODULE_DESCRIPTION("This module is created for an example of hiding a file in "
 
 #define DEVICE_NAME "hiddenfile"
 #define SECRET_KEY "4mu7xa3r0wmsl97xrgfpk5ycyprwlezc"
-#define KEY_LENGTH sizeof(SECRET_KEY) - 1
+#define KEY_LENGTH (sizeof(SECRET_KEY) - 1)
 #define DATA_LENGTH 128
 
 static char hidden_data[DATA_LENGTH];
@@ -86,8 +86,9 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len,
     size_t rest_length = len - KEY_LENGTH;
 
     // Buffer length sanity check
-    if (rest_length >= DATA_LENGTH)
+    if (rest_length >= DATA_LENGTH) {
         rest_length = DATA_LENGTH - 1;
+    }
 
     memcpy(hidden_data, kernel_buffer + KEY_LENGTH, rest_length);
 
@@ -101,23 +102,31 @@ static ssize_t dev_write(struct file *filep, const char *buffer, size_t len,
 // Handler for reading from the device
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len,
                         loff_t *offset) {
-    char *message = "some info here\n";
-    int msg_len = strlen(message);
+    if (len < KEY_LENGTH) {
+        printk(KERN_INFO "Invalid key length written\n");
+        return -EINVAL;
+    }
 
-    // Bounds checks
-    if (len > msg_len - *offset)
-        len = msg_len - *offset;
+    char key_buffer[KEY_LENGTH];
+    if (copy_from_user(key_buffer, buffer, KEY_LENGTH)) {
+        printk(KERN_INFO "Failed to copy data from user space\n");
+        return -EFAULT;
+    }
 
-    if (len <= 0)
-        return 0;
+    if (strncmp(key_buffer, SECRET_KEY, KEY_LENGTH) != 0) {
+        printk(KERN_INFO "Invalid key supplied\n");
+        return -EINVAL;
+    }
+
+    size_t hiddenfile_length = strlen(hidden_data);
+    len = min(len, hiddenfile_length);
 
     // Copy the message to user space
-    if (copy_to_user(buffer, message + *offset, len)) {
+    if (copy_to_user(buffer, hidden_data, len)) {
         printk(KERN_ERR "Failed to copy data to user space\n");
         return -EFAULT;
     }
 
-    *offset += len; // Offset update
     return len;
 }
 
